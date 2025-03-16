@@ -1,8 +1,8 @@
 import typer
-from src.composer.gmail import get_sent_mail
-from src.composer.embeddings import generate_embeddings
-from src.composer.database import store_email
-from src.composer.data_types import SentMail
+from composer.gmail import get_sent_mail
+from composer.embeddings import generate_embeddings
+from composer.database import store_email
+from composer.data_types import SentMail
 from typing import List
 
 app = typer.Typer()
