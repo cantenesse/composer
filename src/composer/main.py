@@ -37,18 +37,24 @@ def get_email(
         TextColumn("[progress.description]{task.description}"),
         transient=True
     ) as progress:
+        # Create a task for fetching emails
+        fetching_task = progress.add_task("Fetching emails...", total=None)
         # Get sent emails from Gmail
-        progress.add_task("Fetching emails...", total=None)
         sent_emails = get_sent_mail(username, password)
+        # Mark the fetching task as completed
+        progress.update(fetching_task, completed=True)
         
         processed_emails: List[SentMail] = []
         
-        # Generate embeddings for each email
-        with progress.add_task("Processing emails...", total=len(sent_emails)) as task:
+        # Create a task for processing emails
+        if sent_emails:
+            processing_task = progress.add_task("Processing emails...", total=len(sent_emails))
             for email in sent_emails:
                 email_with_embeddings = generate_embeddings(email)
                 processed_emails.append(email_with_embeddings)
-                progress.update(task, advance=1)
+                progress.update(processing_task, advance=1)
+        else:
+            typer.echo("No emails to process.")
 
     # Store emails in the PostgreSQL database
     store_email(processed_emails)
