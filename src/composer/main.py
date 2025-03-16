@@ -1,4 +1,5 @@
 import typer
+from typer import Option
 from composer.gmail import get_sent_mail
 from composer.embeddings import generate_embeddings
 from composer.database import store_email
@@ -8,7 +9,22 @@ from typing import List
 app = typer.Typer()
 
 @app.command()
-def get_email(username: str, password: str):
+def get_email(
+    username: str = Option(
+        ...,
+        "--username", "-u",
+        prompt=True,
+        help="Your Gmail username"
+    ),
+    password: str = Option(
+        ...,
+        "--password", "-p",
+        prompt=True,
+        hide_input=True,
+        confirmation_prompt=True,
+        help="Your Gmail password"
+    )
+):
     """
     Connect to a Google account and retrieve sent emails.
 
