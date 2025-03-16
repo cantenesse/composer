@@ -1,4 +1,5 @@
 import typer
+from rich.progress import Progress, SpinnerColumn, TextColumn
 from typer import Option
 from composer.gmail import get_sent_mail
 from composer.embeddings import generate_embeddings
@@ -31,14 +32,23 @@ def get_email(
     Usage:
     uv run main get-email --username your_email@gmail.com --password your_password
     """
-    # Get sent emails from Gmail
-    sent_emails = get_sent_mail(username, password)
-    processed_emails: List[SentMail] = []
-
-    # Generate embeddings for each email
-    for email in sent_emails:
-        email_with_embeddings = generate_embeddings(email)
-        processed_emails.append(email_with_embeddings)
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        transient=True
+    ) as progress:
+        # Get sent emails from Gmail
+        progress.add_task("Fetching emails...", total=None)
+        sent_emails = get_sent_mail(username, password)
+        
+        processed_emails: List[SentMail] = []
+        
+        # Generate embeddings for each email
+        with progress.add_task("Processing emails...", total=len(sent_emails)) as task:
+            for email in sent_emails:
+                email_with_embeddings = generate_embeddings(email)
+                processed_emails.append(email_with_embeddings)
+                progress.update(task, advance=1)
 
     # Store emails in the PostgreSQL database
     store_email(processed_emails)
