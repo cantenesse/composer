@@ -2,7 +2,7 @@ import imaplib
 import email
 from email.header import decode_header
 from typing import List
-from src.composer.data_types import SentMail
+from composer.data_types import SentMail
 
 def get_sent_mail(username: str, password: str) -> List[SentMail]:
     # Connect to the Gmail IMAP server

@@ -46,5 +46,8 @@ def get_email(
 def main():
     app()
 
+if __name__ == "__main__":
+    main()
+
 # Usage example:
 # uv run main get-email --username <email_address> --password <password>
