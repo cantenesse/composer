@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer
-from src.composer.data_types import SentMail
+from composer.data_types import SentMail
 
 def generate_embeddings(sent_email: SentMail) -> SentMail:
     # Load the sentence transformer model

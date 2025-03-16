@@ -1,7 +1,7 @@
 import os
 import psycopg2
 from psycopg2.extras import execute_values
-from src.composer.data_types import SentMail
+from composer.data_types import SentMail
 from typing import List
 
 def store_email(sent_emails: List[SentMail]) -> bool:
