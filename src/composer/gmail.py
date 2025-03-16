@@ -1,5 +1,6 @@
 import imaplib
 import email
+import chardet
 from email.header import decode_header
 from typing import List
 from composer.data_types import SentMail
@@ -49,10 +50,28 @@ def get_sent_mail(username: str, password: str) -> List[SentMail]:
                             content_type = part.get_content_type()
                             content_disposition = str(part.get("Content-Disposition"))
                             if content_type == "text/plain" and "attachment" not in content_disposition:
-                                message = part.get_payload(decode=True).decode()
+                                payload = part.get_payload(decode=True)
+                                charset = part.get_content_charset()
+                                if not charset:
+                                    # Detect encoding if charset is not specified
+                                    result = chardet.detect(payload)
+                                    charset = result['encoding'] if result['encoding'] else 'utf-8'
+                                try:
+                                    message = payload.decode(charset, errors='replace')
+                                except (UnicodeDecodeError, LookupError):
+                                    message = payload.decode('utf-8', errors='replace')
                                 break
                     else:
-                        message = msg.get_payload(decode=True).decode()
+                        payload = msg.get_payload(decode=True)
+                        charset = msg.get_content_charset()
+                        if not charset:
+                            # Detect encoding if charset is not specified
+                            result = chardet.detect(payload)
+                            charset = result['encoding'] if result['encoding'] else 'utf-8'
+                        try:
+                            message = payload.decode(charset, errors='replace')
+                        except (UnicodeDecodeError, LookupError):
+                            message = payload.decode('utf-8', errors='replace')
 
                     # Create SentMail object
                     email_obj = SentMail(
