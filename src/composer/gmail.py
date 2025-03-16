@@ -37,13 +37,24 @@ def get_sent_mail(username: str, password: str) -> List[SentMail]:
                     # Parse the email
                     msg = email.message_from_bytes(response_part[1])
 
-                    # Decode email fields
-                    subject, encoding = decode_header(msg["Subject"])[0]
-                    if isinstance(subject, bytes):
-                        subject = subject.decode(encoding if encoding else "utf-8")
-                    date = msg["Date"]
-                    recipients = msg.get_all("To", [])
+                    # Initialize variables with default values
+                    subject = "(No Subject)"
+                    date = "(No Date)"
+                    recipients = []
                     message = ""
+
+                    # Decode email fields
+                    subject_raw = msg["Subject"]
+                    if subject_raw is not None:
+                        subject_tuple = decode_header(subject_raw)[0]
+                        subject_content, encoding = subject_tuple
+                        if isinstance(subject_content, bytes):
+                            subject = subject_content.decode(encoding if encoding else "utf-8", errors='replace')
+                        else:
+                            subject = subject_content
+
+                    date = msg["Date"] if msg["Date"] is not None else "(No Date)"
+                    recipients = msg.get_all("To", [])
 
                     if msg.is_multipart():
                         for part in msg.walk():
@@ -51,27 +62,35 @@ def get_sent_mail(username: str, password: str) -> List[SentMail]:
                             content_disposition = str(part.get("Content-Disposition"))
                             if content_type == "text/plain" and "attachment" not in content_disposition:
                                 payload = part.get_payload(decode=True)
-                                charset = part.get_content_charset()
-                                if not charset:
-                                    # Detect encoding if charset is not specified
-                                    result = chardet.detect(payload)
-                                    charset = result['encoding'] if result['encoding'] else 'utf-8'
-                                try:
-                                    message = payload.decode(charset, errors='replace')
-                                except (UnicodeDecodeError, LookupError):
-                                    message = payload.decode('utf-8', errors='replace')
+                                if payload is not None:
+                                    charset = part.get_content_charset()
+                                    if not charset:
+                                        # Detect encoding if charset is not specified
+                                        result = chardet.detect(payload)
+                                        charset = result['encoding'] if result['encoding'] else 'utf-8'
+                                    try:
+                                        message = payload.decode(charset, errors='replace')
+                                    except (UnicodeDecodeError, LookupError):
+                                        message = payload.decode('utf-8', errors='replace')
+                                else:
+                                    # If payload is None, set message to empty string
+                                    message = ""
                                 break
                     else:
                         payload = msg.get_payload(decode=True)
-                        charset = msg.get_content_charset()
-                        if not charset:
-                            # Detect encoding if charset is not specified
-                            result = chardet.detect(payload)
-                            charset = result['encoding'] if result['encoding'] else 'utf-8'
-                        try:
-                            message = payload.decode(charset, errors='replace')
-                        except (UnicodeDecodeError, LookupError):
-                            message = payload.decode('utf-8', errors='replace')
+                        if payload is not None:
+                            charset = msg.get_content_charset()
+                            if not charset:
+                                # Detect encoding if charset is not specified
+                                result = chardet.detect(payload)
+                                charset = result['encoding'] if result['encoding'] else 'utf-8'
+                            try:
+                                message = payload.decode(charset, errors='replace')
+                            except (UnicodeDecodeError, LookupError):
+                                message = payload.decode('utf-8', errors='replace')
+                        else:
+                            # If payload is None, set message to empty string
+                            message = ""
 
                     # Create SentMail object
                     email_obj = SentMail(
